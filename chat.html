@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Assistant - Flight Price Predictor</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">✈️ Flight Price Predictor</div>
+            <ul class="nav-links">
+                <li><a href="index.html">Search</a></li>
+                <li><a href="results.html">Results</a></li>
+                <li><a href="chat.html" class="active">AI Assistant</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="chat-container">
+            <div class="chat-header">
+                <h2>🤖 Travel Assistant AI</h2>
+                <p>Ask me about flights, destinations, weather, safety, and travel tips!</p>
+            </div>
+
+            <!-- Chat Messages -->
+            <div class="chat-messages" id="chatMessages">
+                <div class="message ai-message">
+                    <div class="message-content">
+                        <p>Hi! 👋 I'm your travel assistant. I can help you with:</p>
+                        <ul>
+                            <li>✈️ Finding and booking flights</li>
+                            <li>🌤️ Destination weather information</li>
+                            <li>🛡️ Safety and travel advisories</li>
+                            <li>🏨 Travel tips and recommendations</li>
+                            <li>💰 Flight price tips</li>
+                        </ul>
+                        <p>What would you like to know?</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="chat-input-area">
+                <div class="input-group">
+                    <input 
+                        type="text" 
+                        id="chatInput" 
+                        placeholder="Ask me anything about travel..." 
+                        class="chat-input"
+                    >
+                    <button id="sendBtn" class="btn btn-primary">Send</button>
+                    <button id="voiceBtn" class="btn btn-secondary" title="Voice input">🎤</button>
+                </div>
+                <small>Note: AI responses are powered by Hugging Face API. Will be enabled after deployment.</small>
+            </div>
+        </div>
+
+        <!-- Common Questions -->
+        <div class="common-questions">
+            <h3>Suggested Questions:</h3>
+            <div class="question-buttons">
+                <button class="question-btn">What's the best time to book flights?</button>
+                <button class="question-btn">Is it safe to travel to [destination]?</button>
+                <button class="question-btn">Show me flights from NYC to LAX</button>
+                <button class="question-btn">What's the weather in Cairo?</button>
+                <button class="question-btn">How can I find the cheapest flights?</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2026 Flight Price Predictor. Search smarter, fly cheaper.</p>
+    </footer>
+
+    <script src="js/config.js"></script>
+    <script src="js/chatbot.js"></script>
+</body>
+</html>

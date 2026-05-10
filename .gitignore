@@ -1,0 +1,12 @@
+// Tell Git to ignore these files (don't commit API keys!)
+node_modules/
+.DS_Store
+*.log
+npm-debug.log*
+config.local.js
+.env
+.env.local
+.env.*.local
+dist/
+build/
+.vscode/settings.json

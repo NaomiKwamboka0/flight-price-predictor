@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Results - Flight Price Predictor</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">✈️ Flight Price Predictor</div>
+            <ul class="nav-links">
+                <li><a href="index.html">Search</a></li>
+                <li><a href="results.html" class="active">Results</a></li>
+                <li><a href="chat.html">AI Assistant</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Search Summary -->
+        <div class="search-summary">
+            <h2 id="searchTitle"></h2>
+            <button class="btn btn-secondary" onclick="window.location.href='index.html'">← New Search</button>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="loading">
+            <div class="spinner"></div>
+            <p>Searching for the best flights...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="errorState" class="error" style="display: none;">
+            <p id="errorMessage"></p>
+            <button class="btn btn-secondary" onclick="window.location.href='index.html'">Back to Search</button>
+        </div>
+
+        <!-- Results Container -->
+        <div id="resultsContainer" style="display: none;">
+            <!-- Filters -->
+            <div class="filters">
+                <h3>Filters</h3>
+                <div class="filter-group">
+                    <label>Price Range: <span id="priceRangeValue"></span></label>
+                    <input type="range" id="priceFilter" min="0" max="5000" step="50">
+                </div>
+                <div class="filter-group">
+                    <label>Sort By:</label>
+                    <select id="sortBy">
+                        <option value="price-asc">Cheapest First</option>
+                        <option value="price-desc">Most Expensive First</option>
+                        <option value="duration-asc">Shortest Duration</option>
+                        <option value="duration-desc">Longest Duration</option>
+                        <option value="departure-asc">Earliest Departure</option>
+                        <option value="departure-desc">Latest Departure</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Flight Results -->
+            <div id="flightResults" class="flight-results">
+                <!-- Flight cards will be inserted here -->
+            </div>
+
+            <!-- No Results -->
+            <div id="noResults" class="no-results" style="display: none;">
+                <p>No flights found for your search. Try adjusting your dates or airports.</p>
+            </div>
+        </div>
+
+        <!-- Price Prediction Info -->
+        <div class="prediction-info" id="predictionInfo" style="display: none;">
+            <h3>💡 Price Prediction</h3>
+            <div id="predictionMessage"></div>
+        </div>
+    </div>
+
+    <!-- Flight Detail Modal -->
+    <div id="flightModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2026 Flight Price Predictor. Search smarter, fly cheaper.</p>
+    </footer>
+
+    <script src="js/config.js"></script>
+    <script src="js/script.js"></script>
+</body>
+</html>
