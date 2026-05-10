@@ -151,7 +151,49 @@
         <p>&copy; 2026 Flight Price Predictor. Search smarter, fly cheaper.</p>
     </footer>
 
+    <!-- Load environment variables FIRST -->
+    <script>
+        // Quick inline .env loader before other scripts
+        async function loadEnv() {
+            try {
+                const response = await fetch('.env');
+                if (response.ok) {
+                    const text = await response.text();
+                    const lines = text.split('\n');
+                    const config = {};
+                    lines.forEach(line => {
+                        if (line && !line.startsWith('#')) {
+                            const [key, ...valueParts] = line.split('=');
+                            const value = valueParts.join('=').trim();
+                            if (key && value) {
+                                const cleanKey = key.trim();
+                                const cleanValue = value.replace(/^["']|["']$/g, '');
+                                config[cleanKey] = cleanValue;
+                                console.log(`[EnvLoader] Loaded: ${cleanKey}`);
+                            }
+                        }
+                    });
+                    localStorage.setItem('api_config', JSON.stringify(config));
+                    console.log('[EnvLoader] .env loaded successfully');
+                }
+            } catch (error) {
+                console.warn('[EnvLoader] Could not load .env file (OK if using default config)');
+            }
+        }
+        loadEnv();
+    </script>
+
+    <!-- Phase 1: Core functionality -->
     <script src="js/config.js"></script>
+    <script src="js/flightAPI.js"></script>
+    
+    <!-- Phase 2: Price prediction -->
+    <script src="js/prediction.js"></script>
+    
+    <!-- Phase 3: AI assistant -->
+    <script src="js/assistant.js"></script>
+    
+    <!-- Main application -->
     <script src="js/script.js"></script>
 </body>
 </html>

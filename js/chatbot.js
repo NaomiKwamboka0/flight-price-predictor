@@ -1,19 +1,23 @@
-// ==================== CHATBOT SCRIPT ====================
+// ==================== CHATBOT INTEGRATION ====================
+// Using the advanced TravelAssistant with AI, weather, and safety features
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
+    // Load environment
+    await loadEnvVariables();
+
     const chatInput = document.getElementById('chatInput');
     const sendBtn = document.getElementById('sendBtn');
     const voiceBtn = document.getElementById('voiceBtn');
     const questionBtns = document.querySelectorAll('.question-btn');
 
     // Send button
-    sendBtn.addEventListener('click', sendMessage);
+    sendBtn.addEventListener('click', handleChatInput);
     
     // Enter key to send
     chatInput.addEventListener('keypress', function(e) {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            sendMessage();
+            handleChatInput();
         }
     });
 
@@ -24,14 +28,14 @@ document.addEventListener('DOMContentLoaded', function() {
     questionBtns.forEach(btn => {
         btn.addEventListener('click', function() {
             chatInput.value = this.textContent;
-            sendMessage();
+            handleChatInput();
         });
     });
 });
 
-// ==================== SEND MESSAGE ====================
+// ==================== CHAT HANDLER ====================
 
-function sendMessage() {
+async function handleChatInput() {
     const chatInput = document.getElementById('chatInput');
     const message = chatInput.value.trim();
 
@@ -41,11 +45,20 @@ function sendMessage() {
     displayMessage(message, 'user');
     chatInput.value = '';
 
-    // Simulate AI response (Phase 2 will integrate real API)
-    setTimeout(() => {
-        const aiResponse = generateAIResponse(message);
-        displayMessage(aiResponse, 'ai');
-    }, 500);
+    try {
+        // Use the advanced assistant if available
+        if (typeof travelAssistant !== 'undefined') {
+            const response = await travelAssistant.processMessage(message);
+            displayMessage(response, 'ai');
+        } else {
+            // Fallback to basic responses
+            const response = await generateBasicResponse(message);
+            displayMessage(response, 'ai');
+        }
+    } catch (error) {
+        console.error('Chat error:', error);
+        displayMessage(`Sorry, I encountered an error: ${error.message}. Please try again.`, 'ai');
+    }
 }
 
 function displayMessage(message, sender) {
@@ -55,7 +68,13 @@ function displayMessage(message, sender) {
     
     const contentDiv = document.createElement('div');
     contentDiv.className = 'message-content';
-    contentDiv.textContent = message;
+    
+    // Parse markdown-like formatting
+    contentDiv.innerHTML = message
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/__(.*?)__/g, '<em>$1</em>')
+        .replace(/\n/g, '<br>')
+        .replace(/• /g, '• ');
     
     messageDiv.appendChild(contentDiv);
     chatMessages.appendChild(messageDiv);
@@ -64,83 +83,77 @@ function displayMessage(message, sender) {
     chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
-// ==================== AI RESPONSE GENERATOR ====================
+// ==================== ENVIRONMENT LOADING ====================
 
-function generateAIResponse(userMessage) {
+async function loadEnvVariables() {
+    try {
+        const response = await fetch('.env');
+        if (response.ok) {
+            const envText = await response.text();
+            const lines = envText.split('\n');
+            lines.forEach(line => {
+                if (line && !line.startsWith('#')) {
+                    const [key, value] = line.split('=');
+                    if (key && value && value.trim()) {
+                        localStorage.setItem(key.trim(), value.trim());
+                    }
+                }
+            });
+            console.log('[Config] Environment variables loaded');
+        }
+    } catch (error) {
+        console.warn('[Config] .env file not loaded (expected if using defaults)');
+    }
+}
+
+// ==================== BASIC RESPONSE GENERATOR ====================
+// Fallback when TravelAssistant is not available
+
+async function generateBasicResponse(userMessage) {
     const lowerMessage = userMessage.toLowerCase();
 
-    // Flight booking assistance
+    // Flight booking
     if (lowerMessage.includes('flight') || lowerMessage.includes('book')) {
-        const responses = [
-            "I can help you find flights! Visit our search page to enter your departure and destination airports, dates, and preference for one-way or round-trip flights. We search all airlines worldwide including budget carriers.",
-            "Looking for flights? I can help! You can search flexible dates (±3 days) if you're flexible, and we'll show you all available airlines with direct booking links to each airline's website.",
-            "To book a flight, just go to our search page and enter where you're flying from and to. We'll show you options from thousands of airlines worldwide!"
-        ];
-        return responses[Math.floor(Math.random() * responses.length)];
+        return "✈️ I can help you find flights! Go to the search page and enter:\n• Where you're flying FROM (airport code like NYC)\n• Where you're flying TO\n• When you want to travel\n\nI'll search all airlines worldwide and show you the best deals!";
     }
 
-    // Price prediction
+    // Price tips
     if (lowerMessage.includes('price') || lowerMessage.includes('cheap') || lowerMessage.includes('cost')) {
-        const responses = [
-            "💰 Price Tip: Book 6-8 weeks in advance for the best prices. Prices typically increase closer to your departure date. Our search shows you price predictions based on historical data!",
-            "For the cheapest flights, try booking mid-week (Tuesday-Thursday) and avoid peak travel times. Our app can help predict when prices will be lowest!",
-            "The cheapest flights are usually early morning or late night departures. Also, flying on different dates can save you hundreds of dollars - try our flexible date search!"
-        ];
-        return responses[Math.floor(Math.random() * responses.length)];
+        return "💰 **Money-Saving Tips:**\n\n• Book **6-8 weeks** in advance\n• Travel **Tuesday-Thursday** for cheaper flights\n• **Early morning or late night** flights are cheaper\n• Clear your browser cookies before searching\n• Use **flexible dates** - try ±3 days\n• Consider **nearby airports**\n\nOur price predictor shows you the best times to book!";
     }
 
     // Weather
     if (lowerMessage.includes('weather') || lowerMessage.includes('climate')) {
-        return "I can check weather for your destination! Tell me which city or country you're flying to, and I'll give you current weather and a forecast. (Note: This feature will be fully enabled after API setup)";
+        return "🌤️ Tell me which city you're traveling to and I can check the weather forecast for you!";
     }
 
     // Safety
     if (lowerMessage.includes('safe') || lowerMessage.includes('dangerous') || lowerMessage.includes('safety')) {
-        const responses = [
-            "Safety is important! I can check travel advisories for your destination. Which country are you considering? I'll tell you what major travel advisories exist.",
-            "Most tourist destinations are quite safe! That said, it's good to check current travel advisories. Tell me where you're thinking of going and I can provide safety information.",
-            "Travel safety varies by location and timing. I can check current advisories for you. Where are you planning to visit?"
-        ];
-        return responses[Math.floor(Math.random() * responses.length)];
-    }
-
-    // General travel tips
-    if (lowerMessage.includes('tip') || lowerMessage.includes('advice') || lowerMessage.includes('suggest')) {
-        const responses = [
-            "✈️ Travel Tips:\n• Book flights 6-8 weeks in advance\n• Travel mid-week for better prices\n• Clear your browser cookies before booking\n• Sign up for airline newsletters for deals\n• Be flexible with dates!",
-            "Here are some ways to save on flights:\n• Set up price alerts\n• Consider nearby airports\n• Fly at unpopular times (early morning, late night)\n• Book round-trips instead of two one-ways\n• Check multiple airlines",
-            "Smart travel tips:\n• Pack light to avoid baggage fees\n• Check visa requirements early\n• Travel during shoulder season (not peak)\n• Compare prices across multiple days\n• Book directly with airlines when possible"
-        ];
-        return responses[Math.floor(Math.random() * responses.length)];
-    }
-
-    // Destination info
-    if (lowerMessage.includes('where') || lowerMessage.includes('destination') || lowerMessage.includes('visit')) {
-        return "I can help you learn about destinations! Tell me which city or country you'd like to visit, and I'll give you info about flights there, weather, attractions, and travel tips.";
-    }
-
-    // General greeting
-    if (lowerMessage.includes('hello') || lowerMessage.includes('hi') || lowerMessage.includes('hey')) {
-        const responses = [
-            "Hello! 👋 I'm your travel assistant. I can help with flight search, price tips, destination info, and travel advice. What can I help you with today?",
-            "Hi there! 🛫 Ready to find some great flight deals? I can help you search flights, find the cheapest prices, or answer travel questions!",
-            "Hey! 👋 Welcome to Flight Price Predictor! I'm here to help you find cheap flights and get travel advice. What's your question?"
-        ];
-        return responses[Math.floor(Math.random() * responses.length)];
+        return "🛡️ Safety is important! Tell me which destination you're considering and I'll provide travel safety information, health alerts, and current advisories.";
     }
 
     // Help
-    if (lowerMessage.includes('help') || lowerMessage.includes('what can')) {
-        return "I can help you with:\n✈️ Finding flights worldwide\n💰 Getting the best prices\n🌤️ Checking destination weather\n🛡️ Travel safety information\n💡 Travel tips and advice\n\nJust ask me anything!";
+    if (lowerMessage.includes('help') || lowerMessage.includes('what can') || lowerMessage.includes('capability')) {
+        return "👋 I'm your travel assistant! I can help with:\n\n✈️ **Finding flights** - Search all airlines worldwide\n💰 **Price tips** - Best time to book\n🌤️ **Weather** - Check destination weather\n🛡️ **Safety** - Travel advisories\n🏨 **Destinations** - Info about places to visit\n💡 **Travel advice** - General tips\n\nWhat would you like to know?";
     }
 
-    // Default response
-    const defaultResponses = [
-        "That's a great question! I'm still learning, but I can help with flights, prices, destinations, and travel advice. Try asking me about flights or travel tips!",
-        "I'm here to help with travel-related questions! Ask me about flights, prices, destinations, or travel tips.",
-        "I'm your travel assistant! For the most accurate information, I recommend checking our flight search. But feel free to ask me anything about travel!"
-    ];
-    return defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
+    // Greeting
+    if (lowerMessage.match(/hello|hi|hey|good morning|good afternoon/)) {
+        const greetings = [
+            "👋 Hi! I'm your travel assistant. How can I help you find the perfect flight?",
+            "Hello! 🛫 Ready to find some great travel deals? Ask me about flights, prices, or destinations!",
+            "Hey there! 👉 What travel questions can I answer for you today?"
+        ];
+        return greetings[Math.floor(Math.random() * greetings.length)];
+    }
+
+    // Thank you
+    if (lowerMessage.includes('thank')) {
+        return "You're welcome! 😊 Need anything else help with your travel plans?";
+    }
+
+    // Default
+    return `That's a great question! For travel-related queries, I can help with:\n\n• ✈️ Flight search & booking\n• 💰 Price predictions & tips\n• 🌤️ Destination weather\n• 🛡️ Travel safety info\n• 💡 General travel advice\n\nWhat would you like to know?`;
 }
 
 // ==================== VOICE INPUT ====================
