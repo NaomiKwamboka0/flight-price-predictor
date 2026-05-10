@@ -34,6 +34,24 @@ function saveSearchParams(params) {
     }
 }
 
+// Save flight data for price tracking and prediction
+function saveFlightData(flights) {
+    try {
+        // Save to localStorage
+        localStorage.setItem('flightData', JSON.stringify(flights));
+        
+        // Store for prediction analytics
+        const allFlights = JSON.parse(localStorage.getItem('allFlights') || '[]');
+        const newFlights = flights.filter(f => !allFlights.some(af => af.id === f.id));
+        allFlights.push(...newFlights);
+        localStorage.setItem('allFlights', JSON.stringify(allFlights.slice(-1000))); // Keep last 1000
+        
+        console.log('[Data] Saved', flights.length, 'flights for price tracking');
+    } catch (error) {
+        console.warn('[Data] Could not save flight data:', error);
+    }
+}
+
 // Set minimum date to today
 document.addEventListener('DOMContentLoaded', async function() {
     // Load environment first
@@ -169,17 +187,25 @@ async function searchFlights(params) {
     console.log('[Search] Params:', params);
     
     try {
-        // Check if we have any flight API keys configured
-        const apiKey = apiConfig.get('VITE_SKYSCANNER_API_KEY') || 
-                      apiConfig.get('VITE_AMADEUS_API_KEY') ||
-                      apiConfig.get('VITE_KIWI_API_KEY');
+        // Ensure apiConfig is initialized
+        if (typeof apiConfig === 'undefined') {
+            console.warn('[Search] apiConfig not defined, using mock data');
+            return generateMockFlights(params);
+        }
 
-        if (apiKey && typeof flightAPIHandler !== 'undefined') {
+        // Check if we have any flight API keys configured
+        const skyscannerKey = apiConfig.get('VITE_SKYSCANNER_API_KEY');
+        const amadeusKey = apiConfig.get('VITE_AMADEUS_API_KEY');
+        const kiwiKey = apiConfig.get('VITE_KIWI_API_KEY');
+
+        if ((skyscannerKey || amadeusKey || kiwiKey) && typeof flightAPIHandler !== 'undefined') {
             try {
                 console.log('[Search] API key found, attempting real API call...');
                 const flights = await flightAPIHandler.searchFlights(params);
-                console.log('[Search] API returned', flights.length, 'flights');
-                return flights;
+                if (flights && flights.length > 0) {
+                    console.log('[Search] API returned', flights.length, 'flights');
+                    return flights;
+                }
             } catch (error) {
                 console.warn('[Search] Real API failed, falling back to mock data:', error.message);
             }
