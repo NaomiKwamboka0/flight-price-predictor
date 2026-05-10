@@ -1,34 +1,99 @@
 // ==================== API CONFIGURATION ====================
+// Load environment variables from multiple sources
 
+class APIConfig {
+    constructor() {
+        this.config = {};
+        this.loadEnvironment();
+    }
+
+    loadEnvironment() {
+        // Priority 1: Check localStorage (persisted from .env)
+        const stored = localStorage.getItem('api_config');
+        if (stored) {
+            this.config = JSON.parse(stored);
+            console.log('[Config] Loaded from localStorage');
+            return;
+        }
+
+        // Priority 2: Check window object (if loaded via script)
+        if (window.API_KEYS) {
+            this.config = window.API_KEYS;
+            localStorage.setItem('api_config', JSON.stringify(this.config));
+            console.log('[Config] Loaded from window.API_KEYS');
+            return;
+        }
+
+        // Priority 3: Load from .env file (try to fetch)
+        this.loadFromEnvFile();
+    }
+
+    async loadFromEnvFile() {
+        try {
+            const response = await fetch('.env');
+            if (response.ok) {
+                const text = await response.text();
+                const envVars = this.parseEnvFile(text);
+                this.config = envVars;
+                localStorage.setItem('api_config', JSON.stringify(envVars));
+                console.log('[Config] Loaded from .env file');
+            }
+        } catch (error) {
+            console.warn('[Config] Could not load .env file, using defaults');
+        }
+    }
+
+    parseEnvFile(text) {
+        const config = {};
+        const lines = text.split('\n');
+        lines.forEach(line => {
+            if (line && !line.startsWith('#')) {
+                const [key, ...valueParts] = line.split('=');
+                const value = valueParts.join('=').trim();
+                if (key && value) {
+                    config[key.trim()] = value;
+                }
+            }
+        });
+        return config;
+    }
+
+    get(key, defaultValue = null) {
+        return this.config[key] || defaultValue;
+    }
+
+    set(key, value) {
+        this.config[key] = value;
+        localStorage.setItem('api_config', JSON.stringify(this.config));
+    }
+
+    hasKey(key) {
+        return !!(this.config[key] && this.config[key].length > 0);
+    }
+}
+
+const apiConfig = new APIConfig();
+
+// Legacy API_CONFIG object for backwards compatibility
 const API_CONFIG = {
-    // Flight Search API
     flightAPI: {
-        // Using Skyscanner or RapidAPI endpoints
-        // You'll need to get your own API key from: https://rapidapi.com/
-        provider: 'rapidapi', // 'rapidapi', 'amadeus', or 'skyscanner'
-        apiKey: 'YOUR_API_KEY_HERE', // Replace with your RapidAPI key
+        provider: 'rapidapi',
+        apiKey: apiConfig.get('VITE_SKYSCANNER_API_KEY', ''),
         rapidApiHost: 'skyscanner44.p.rapidapi.com',
         baseUrl: 'https://skyscanner44.p.rapidapi.com/search',
     },
-
-    // Weather API (OpenWeatherMap)
     weather: {
-        apiKey: 'YOUR_OPENWEATHERMAP_KEY', // Get from: https://openweathermap.org/api
+        apiKey: apiConfig.get('VITE_OPENWEATHER_API_KEY', ''),
         baseUrl: 'https://api.openweathermap.org/data/2.5/weather'
     },
-
-    // AI Chatbot API (Hugging Face)
     chatbot: {
-        apiKey: 'YOUR_HUGGING_FACE_API_KEY', // Get from: https://huggingface.co/
-        modelId: 'gpt2', // or use 'meta-llama/Llama-2-7b-chat-hf'
+        apiKey: apiConfig.get('VITE_HUGGING_FACE_API_KEY', ''),
+        modelId: 'gpt2',
         baseUrl: 'https://api-inference.huggingface.co/models/'
     },
-
-    // Safety/Travel Advisory APIs
     safety: {
-        // Uses public APIs - no key needed for basic info
         advisoryUrl: 'https://www.travel.state.gov/content/dam/students-abroad/json/travelwarnings.json',
-        healthUrl: 'https://www.cdc.gov/covid-data-tracker/' // CDC data
+        healthUrl: 'https://www.cdc.gov/covid-data-tracker/'
     }
 };
 

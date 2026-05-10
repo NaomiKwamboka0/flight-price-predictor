@@ -1,7 +1,44 @@
 // ==================== FLIGHT SEARCH MAIN SCRIPT ====================
+// Integrated with multi-API handler, price prediction, and AI assistant
+
+// Load environment variables from .env
+async function loadEnvVariables() {
+    try {
+        const response = await fetch('.env');
+        if (response.ok) {
+            const envText = await response.text();
+            const lines = envText.split('\n');
+            lines.forEach(line => {
+                if (line && !line.startsWith('#')) {
+                    const [key, value] = line.split('=');
+                    if (key && value) {
+                        localStorage.setItem(key.trim(), value.trim());
+                    }
+                }
+            });
+            console.log('[Config] Environment variables loaded');
+        }
+    } catch (error) {
+        console.warn('[Config] Could not load .env file (expected in development)');
+    }
+}
+
+// Save search parameters to localStorage and Firebase
+function saveSearchParams(params) {
+    try {
+        // Save to localStorage
+        localStorage.setItem('lastSearch', JSON.stringify(params));
+        console.log('[Search] Parameters saved:', params);
+    } catch (error) {
+        console.warn('[Search] Could not save parameters:', error);
+    }
+}
 
 // Set minimum date to today
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
+    // Load environment first
+    await loadEnvVariables();
+
     const departDateInput = document.getElementById('departDate');
     const returnDateInput = document.getElementById('returnDate');
     const today = getMinDate();
@@ -128,15 +165,36 @@ async function handleFlightSearch(e) {
 // ==================== FLIGHT SEARCH API CALL ====================
 
 async function searchFlights(params) {
-    // For now, we'll return mock data to test the UI
-    // In Phase 1.5, we'll integrate real APIs
+    console.log('[Search] Starting flight search...');
+    console.log('[Search] Params:', params);
     
-    console.log('Searching flights with params:', params);
+    try {
+        // Check if we have any flight API keys configured
+        const apiKey = apiConfig.get('VITE_SKYSCANNER_API_KEY') || 
+                      apiConfig.get('VITE_AMADEUS_API_KEY') ||
+                      apiConfig.get('VITE_KIWI_API_KEY');
 
-    // Mock flight data - replace with real API call
-    const mockFlights = generateMockFlights(params);
-    
-    return mockFlights;
+        if (apiKey && typeof flightAPIHandler !== 'undefined') {
+            try {
+                console.log('[Search] API key found, attempting real API call...');
+                const flights = await flightAPIHandler.searchFlights(params);
+                console.log('[Search] API returned', flights.length, 'flights');
+                return flights;
+            } catch (error) {
+                console.warn('[Search] Real API failed, falling back to mock data:', error.message);
+            }
+        } else {
+            console.log('[Search] No API keys configured, using mock data');
+        }
+
+        // Fallback to mock data
+        return generateMockFlights(params);
+
+    } catch (error) {
+        console.error('[Search] Fatal error:', error);
+        // Return mock data on any error
+        return generateMockFlights(params);
+    }
 }
 
 // Mock flight generator - for testing UI
@@ -371,22 +429,59 @@ function showPricePrediction(flights, searchParams) {
     
     if (!flights || flights.length === 0) return;
 
-    const avgPrice = Math.round(
-        flights.reduce((sum, f) => sum + f.price, 0) / flights.length
-    );
-    const minPrice = Math.min(...flights.map(f => f.price));
-    const maxPrice = Math.max(...flights.map(f => f.price));
+    // Use price prediction engine if available
+    if (typeof pricePredictionEngine !== 'undefined') {
+        // Record prices for future predictions
+        pricePredictionEngine.recordFlightPrices(searchParams, flights);
 
-    let prediction = `
-        <p><strong>Average Price:</strong> ${formatCurrency(avgPrice)}</p>
-        <p><strong>Cheapest Option:</strong> ${formatCurrency(minPrice)}</p>
-        <p><strong>Most Expensive:</strong> ${formatCurrency(maxPrice)}</p>
-        <p style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ccc;">
-            💡 <strong>Tip:</strong> Book 6-8 weeks in advance for the best prices. Prices typically increase closer to departure date.
-        </p>
-    `;
+        // Get prediction
+        const prediction = pricePredictionEngine.predictBestBookingTime(searchParams);
+        const alerts = pricePredictionEngine.generatePriceAlerts(flights, searchParams);
 
-    predictionMessage.innerHTML = prediction;
+        // Build prediction message
+        let prediction_html = `
+            <p><strong>📊 Price Analysis</strong></p>
+            <div style="margin: 15px 0; padding: 15px; background: #f0f8ff; border-radius: 4px;">
+                <p><strong>${prediction.recommendation}</strong></p>
+                <p style="margin-top: 10px; font-size: 13px; color: #666;">
+                    Current Avg: ${formatCurrency(prediction.currentAvgPrice)}<br>
+                    Historical Low: ${formatCurrency(prediction.historicalLowPrice)}<br>
+                    Confidence: ${Math.round(prediction.confidence * 100)}%
+                </p>
+            </div>
+        `;
+
+        if (alerts.length > 0) {
+            prediction_html += `<div style="margin-top: 15px;">`;
+            alerts.forEach(alert => {
+                prediction_html += `
+                    <div style="padding: 10px; margin: 10px 0; background: #f9f9f9; border-left: 4px solid #${alert.type === 'good' ? '4caf50' : alert.type === 'warning' ? 'ff9800' : '2196f3'};">
+                        ${alert.icon} ${alert.message}
+                    </div>
+                `;
+            });
+            prediction_html += `</div>`;
+        }
+
+        predictionMessage.innerHTML = prediction_html;
+    } else {
+        // Fallback: simple statistics
+        const avgPrice = Math.round(
+            flights.reduce((sum, f) => sum + f.price, 0) / flights.length
+        );
+        const minPrice = Math.min(...flights.map(f => f.price));
+        const maxPrice = Math.max(...flights.map(f => f.price));
+
+        predictionMessage.innerHTML = `
+            <p><strong>Average Price:</strong> ${formatCurrency(avgPrice)}</p>
+            <p><strong>Cheapest Option:</strong> ${formatCurrency(minPrice)}</p>
+            <p><strong>Most Expensive:</strong> ${formatCurrency(maxPrice)}</p>
+            <p style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ccc;">
+                💡 <strong>Tip:</strong> Book 6-8 weeks in advance for the best prices. Prices typically increase closer to departure date.
+            </p>
+        `;
+    }
+
     predictionInfo.style.display = 'block';
 }
 
