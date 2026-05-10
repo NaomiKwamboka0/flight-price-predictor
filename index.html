@@ -151,40 +151,11 @@
         <p>&copy; 2026 Flight Price Predictor. Search smarter, fly cheaper.</p>
     </footer>
 
-    <!-- Load environment variables FIRST -->
-    <script>
-        // Quick inline .env loader before other scripts
-        async function loadEnv() {
-            try {
-                const response = await fetch('.env');
-                if (response.ok) {
-                    const text = await response.text();
-                    const lines = text.split('\n');
-                    const config = {};
-                    lines.forEach(line => {
-                        if (line && !line.startsWith('#')) {
-                            const [key, ...valueParts] = line.split('=');
-                            const value = valueParts.join('=').trim();
-                            if (key && value) {
-                                const cleanKey = key.trim();
-                                const cleanValue = value.replace(/^["']|["']$/g, '');
-                                config[cleanKey] = cleanValue;
-                                console.log(`[EnvLoader] Loaded: ${cleanKey}`);
-                            }
-                        }
-                    });
-                    localStorage.setItem('api_config', JSON.stringify(config));
-                    console.log('[EnvLoader] .env loaded successfully');
-                }
-            } catch (error) {
-                console.warn('[EnvLoader] Could not load .env file (OK if using default config)');
-            }
-        }
-        loadEnv();
-    </script>
-
-    <!-- Phase 1: Core functionality -->
+    <!-- Load API configuration FIRST -->
     <script src="js/config.js"></script>
+    <script src="js/api-config.js"></script>
+    
+    <!-- Phase 1: Core functionality -->
     <script src="js/flightAPI.js"></script>
     
     <!-- Phase 2: Price prediction -->
