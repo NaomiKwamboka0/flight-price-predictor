@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Price Predictor - Find Cheap Flights Worldwide</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">✈️ Flight Price Predictor</div>
+            <ul class="nav-links">
+                <li><a href="index.html" class="active">Search</a></li>
+                <li><a href="results.html">Results</a></li>
+                <li><a href="chat.html">AI Assistant</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="hero">
+        <h1>Find the Cheapest Flights Worldwide</h1>
+        <p>Search all airlines - Qatar, Ethiopian, Safarilink, and 1000+ more</p>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Search Form -->
+        <div class="search-card">
+            <h2>Search Flights</h2>
+            
+            <form id="flightSearchForm">
+                <!-- Trip Type -->
+                <div class="form-group">
+                    <label>Trip Type:</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="tripType" value="oneWay" checked> One Way</label>
+                        <label><input type="radio" name="tripType" value="roundTrip"> Round Trip</label>
+                    </div>
+                </div>
+
+                <!-- From -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="fromAirport">From (Airport Code):</label>
+                        <input 
+                            type="text" 
+                            id="fromAirport" 
+                            name="from" 
+                            placeholder="e.g., NYC, LAX, JNB" 
+                            required
+                            maxlength="3"
+                        >
+                        <small>Use 3-letter airport code (NYC, LHR, DXB, etc.)</small>
+                    </div>
+
+                    <!-- To -->
+                    <div class="form-group">
+                        <label for="toAirport">To (Airport Code):</label>
+                        <input 
+                            type="text" 
+                            id="toAirport" 
+                            name="to" 
+                            placeholder="e.g., LAX, LHR, DXB" 
+                            required
+                            maxlength="3"
+                        >
+                        <small>Use 3-letter airport code</small>
+                    </div>
+                </div>
+
+                <!-- Departure Date -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="departDate">Departure Date:</label>
+                        <input 
+                            type="date" 
+                            id="departDate" 
+                            name="departDate" 
+                            required
+                        >
+                    </div>
+
+                    <!-- Return Date (for round trip) -->
+                    <div class="form-group" id="returnDateGroup" style="display: none;">
+                        <label for="returnDate">Return Date:</label>
+                        <input 
+                            type="date" 
+                            id="returnDate" 
+                            name="returnDate"
+                        >
+                    </div>
+                </div>
+
+                <!-- Flexible Dates Option -->
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="flexibleDates" name="flexible"> 
+                        Search flexible dates (±3 days)
+                    </label>
+                </div>
+
+                <!-- Search Button -->
+                <button type="submit" class="btn btn-primary btn-large">
+                    🔍 Search Flights
+                </button>
+                <div id="searchStatus"></div>
+            </form>
+        </div>
+
+        <!-- Info Cards -->
+        <div class="info-section">
+            <h3>How It Works</h3>
+            <div class="info-cards">
+                <div class="info-card">
+                    <div class="icon">🌍</div>
+                    <h4>Search All Airlines</h4>
+                    <p>We search through 1000+ airlines worldwide including budget carriers and local airlines</p>
+                </div>
+                <div class="info-card">
+                    <div class="icon">💰</div>
+                    <h4>Price Predictions</h4>
+                    <p>Get recommendations on the best time to book your flight for the cheapest price</p>
+                </div>
+                <div class="info-card">
+                    <div class="icon">🤖</div>
+                    <h4>AI Assistant</h4>
+                    <p>Chat with our AI to ask questions about destinations, weather, safety, and bookings</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Popular Routes -->
+        <div class="popular-routes">
+            <h3>Quick Searches</h3>
+            <div class="quick-search-buttons">
+                <button class="quick-btn" data-from="NYC" data-to="LAX">NYC → LAX</button>
+                <button class="quick-btn" data-from="LHR" data-to="CDG">London → Paris</button>
+                <button class="quick-btn" data-from="JNB" data-to="CPT">Johannesburg → Cape Town</button>
+                <button class="quick-btn" data-from="NRB" data-to="MBA">Nairobi → Mombasa</button>
+                <button class="quick-btn" data-from="ADD" data-to="DXB">Addis Ababa → Dubai</button>
+                <button class="quick-btn" data-from="DXB" data-to="DOH">Dubai → Doha</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2026 Flight Price Predictor. Search smarter, fly cheaper.</p>
+    </footer>
+
+    <script src="js/config.js"></script>
+    <script src="js/script.js"></script>
+</body>
+</html>
