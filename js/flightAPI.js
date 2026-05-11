@@ -59,15 +59,19 @@ class FlightAPIHandler {
 
     getEnvVar(key) {
         // Load from multiple sources in priority order
-        // 1. apiConfig (from config.js)
-        if (typeof apiConfig !== 'undefined') {
-            const value = apiConfig.get(key);
+        // 1. window.API_KEYS (from api-config.js)
+        if (typeof window.API_KEYS !== 'undefined' && window.API_KEYS[key]) {
+            return window.API_KEYS[key];
+        }
+        // 2. apiConfig (from config.js)
+        if (typeof window.apiConfig !== 'undefined') {
+            const value = window.apiConfig.get(key);
             if (value) return value;
         }
-        // 2. localStorage
+        // 3. localStorage
         const stored = localStorage.getItem(key);
         if (stored) return stored;
-        // 3. window object
+        // 4. window object (legacy)
         return window[key] || '';
     }
 
