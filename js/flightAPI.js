@@ -460,3 +460,11 @@ class FlightAPIHandler {
 
 // Export singleton
 const flightAPIHandler = new FlightAPIHandler();
+
+// Make it globally accessible
+window.flightAPIHandler = flightAPIHandler;
+
+console.log('[FlightAPI] Handler initialized and exposed to window');
+console.log('[FlightAPI] Checking API configuration...');
+console.log('[FlightAPI] Skyscanner key available:', !!flightAPIHandler.getEnvVar('VITE_SKYSCANNER_API_KEY'));
+console.log('[FlightAPI] Enabled APIs:', Object.values(flightAPIHandler.apis).filter(a => a.enabled).map(a => a.name).join(', ') || 'None - will use mock data');
