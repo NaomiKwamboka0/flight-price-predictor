@@ -17,10 +17,11 @@ class APIConfig {
         }
 
         // Priority 2: Check window object (if loaded via script)
-        if (window.API_KEYS) {
-            this.config = window.API_KEYS;
+        if (typeof window !== 'undefined' && window.API_KEYS) {
+            this.config = { ...window.API_KEYS };
             localStorage.setItem('api_config', JSON.stringify(this.config));
             console.log('[Config] Loaded from window.API_KEYS');
+            console.log('[Config] Skyscanner key loaded:', !!this.config.VITE_SKYSCANNER_API_KEY);
             return;
         }
 
@@ -73,6 +74,18 @@ class APIConfig {
 }
 
 const apiConfig = new APIConfig();
+
+// Ensure apiConfig is accessible globally
+window.apiConfig = apiConfig;
+
+// If window.API_KEYS is available, populate the apiConfig immediately
+if (typeof window.API_KEYS !== 'undefined') {
+    console.log('[Config] window.API_KEYS is available, using it directly');
+    window.apiConfig.config = { ...window.API_KEYS };
+    localStorage.setItem('api_config', JSON.stringify(window.apiConfig.config));
+}
+
+console.log('[Config] API Config initialized. Has Skyscanner key:', !!window.apiConfig.get('VITE_SKYSCANNER_API_KEY'));
 
 // Legacy API_CONFIG object for backwards compatibility
 const API_CONFIG = {
