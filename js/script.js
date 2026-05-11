@@ -187,33 +187,29 @@ async function searchFlights(params) {
     console.log('[Search] Params:', params);
     
     try {
-        // Ensure apiConfig is initialized
-        if (typeof apiConfig === 'undefined') {
-            console.warn('[Search] apiConfig not defined, using mock data');
+        // Check if we have API keys configured from window.API_KEYS
+        const hasSkyscannerKey = !!(window.API_KEYS && window.API_KEYS.VITE_SKYSCANNER_API_KEY);
+        const hasAmadeusKey = !!(window.API_KEYS && window.API_KEYS.VITE_AMADEUS_API_KEY);
+        const hasKiwiKey = !!(window.API_KEYS && window.API_KEYS.VITE_KIWI_API_KEY);
+        
+        console.log('[Search] Has Skyscanner key:', hasSkyscannerKey);
+        console.log('[Search] Has Amadeus key:', hasAmadeusKey);
+        console.log('[Search] Has Kiwi key:', hasKiwiKey);
+
+        // If no real API keys configured, use mock data
+        if (!hasSkyscannerKey && !hasAmadeusKey && !hasKiwiKey) {
+            console.warn('[Search] No API keys configured, using mock data');
             return generateMockFlights(params);
         }
 
-        // Check if we have any flight API keys configured
-        const skyscannerKey = apiConfig.get('VITE_SKYSCANNER_API_KEY');
-        const amadeusKey = apiConfig.get('VITE_AMADEUS_API_KEY');
-        const kiwiKey = apiConfig.get('VITE_KIWI_API_KEY');
-
-        if ((skyscannerKey || amadeusKey || kiwiKey) && typeof flightAPIHandler !== 'undefined') {
-            try {
-                console.log('[Search] API key found, attempting real API call...');
-                const flights = await flightAPIHandler.searchFlights(params);
-                if (flights && flights.length > 0) {
-                    console.log('[Search] API returned', flights.length, 'flights');
-                    return flights;
-                }
-            } catch (error) {
-                console.warn('[Search] Real API failed, falling back to mock data:', error.message);
-            }
-        } else {
-            console.log('[Search] No API keys configured, using mock data');
+        // Use the flight API handler to search
+        if (typeof window.flightAPIHandler !== 'undefined') {
+            console.log('[Search] Using FlightAPIHandler...');
+            return await window.flightAPIHandler.searchFlights(params);
         }
 
-        // Fallback to mock data
+        // Fallback if handler not available
+        console.log('[Search] FlightAPIHandler not available, using mock data');
         return generateMockFlights(params);
 
     } catch (error) {
