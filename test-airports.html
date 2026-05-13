@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Airport Search Testing</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-box {
+            background: #f0f0f0;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            border-left: 4px solid #0066cc;
+        }
+        .test-box h3 {
+            margin-top: 0;
+        }
+        .result {
+            background: white;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+            border-left: 3px solid green;
+        }
+        .error {
+            border-left-color: red;
+            color: red;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background: #0066cc;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0052a3;
+        }
+    </style>
+</head>
+<body>
+    <h1>✈️ Airport Search Testing</h1>
+
+    <div class="test-box">
+        <h3>Test 1: Search by Country</h3>
+        <input type="text" id="countryInput" placeholder="Type: Kenya, USA, Egypt, etc.">
+        <button onclick="testCountrySearch()">Search</button>
+        <div id="countryResults"></div>
+    </div>
+
+    <div class="test-box">
+        <h3>Test 2: Search by City</h3>
+        <input type="text" id="cityInput" placeholder="Type: Nairobi, London, Dubai, etc.">
+        <button onclick="testCitySearch()">Search</button>
+        <div id="cityResults"></div>
+    </div>
+
+    <div class="test-box">
+        <h3>Test 3: Fuzzy Search (Misspellings)</h3>
+        <input type="text" id="fuzzyInput" placeholder="Type: Kenia, Londun, etc.">
+        <button onclick="testFuzzySearch()">Search</button>
+        <div id="fuzzyResults"></div>
+    </div>
+
+    <div class="test-box">
+        <h3>Test 4: Airport Code Lookup</h3>
+        <input type="text" id="codeInput" placeholder="Type: NYC, NRB, DXB, etc.">
+        <button onclick="testCodeSearch()">Search</button>
+        <div id="codeResults"></div>
+    </div>
+
+    <div class="test-box">
+        <h3>System Status</h3>
+        <div id="systemStatus"></div>
+    </div>
+
+    <script src="js/airports.js"></script>
+    <script>
+        function displayResults(containerId, results) {
+            const container = document.getElementById(containerId);
+            if (!results || results.length === 0) {
+                container.innerHTML = '<div class="result error">❌ No results found</div>';
+                return;
+            }
+            container.innerHTML = results.map(airport =>
+                `<div class="result">
+                    <strong>${airport.city}, ${airport.country}</strong><br>
+                    Airport: ${airport.name} (${airport.code})<br>
+                    Region: ${airport.region}
+                </div>`
+            ).join('');
+        }
+
+        function testCountrySearch() {
+            const query = document.getElementById('countryInput').value;
+            if (!query) {
+                alert('Please enter a country name');
+                return;
+            }
+            const results = airportFinder.search(query);
+            displayResults('countryResults', results);
+        }
+
+        function testCitySearch() {
+            const query = document.getElementById('cityInput').value;
+            if (!query) {
+                alert('Please enter a city name');
+                return;
+            }
+            const results = airportFinder.search(query);
+            displayResults('cityResults', results);
+        }
+
+        function testFuzzySearch() {
+            const query = document.getElementById('fuzzyInput').value;
+            if (!query) {
+                alert('Please enter a search term');
+                return;
+            }
+            const results = airportFinder.search(query);
+            displayResults('fuzzyResults', results);
+        }
+
+        function testCodeSearch() {
+            const query = document.getElementById('codeInput').value;
+            if (!query) {
+                alert('Please enter an airport code');
+                return;
+            }
+            const results = airportFinder.search(query);
+            displayResults('codeResults', results);
+        }
+
+        // Show system status on load
+        window.onload = function() {
+            const status = document.getElementById('systemStatus');
+            if (typeof airportFinder !== 'undefined') {
+                status.innerHTML = `
+                    <div class="result">
+                        ✅ Airport Finder loaded<br>
+                        Total airports: ${AIRPORTS_DATABASE.length}<br>
+                        Regions: ${[...new Set(AIRPORTS_DATABASE.map(a => a.region))].join(', ')}
+                    </div>
+                `;
+            } else {
+                status.innerHTML = '<div class="result error">❌ Airport Finder not loaded</div>';
+            }
+        };
+
+        // Allow Enter key to search
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    this.nextElementSibling.click();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
