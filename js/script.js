@@ -92,9 +92,22 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Quick search buttons
     const quickBtns = document.querySelectorAll('.quick-btn');
     quickBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            document.getElementById('fromAirport').value = this.dataset.from;
-            document.getElementById('toAirport').value = this.dataset.to;
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const fromCode = this.dataset.from;
+            const toCode = this.dataset.to;
+
+            // Get airports by code to get full names
+            const fromAirport = airportFinder.getByCode(fromCode);
+            const toAirport = airportFinder.getByCode(toCode);
+
+            if (fromAirport) {
+                fromAutocomplete.selectAirport(fromAirport);
+            }
+            if (toAirport) {
+                toAutocomplete.selectAirport(toAirport);
+            }
+
             document.getElementById('departDate').focus();
         });
     });
@@ -110,8 +123,13 @@ document.addEventListener('DOMContentLoaded', async function() {
 async function handleFlightSearch(e) {
     e.preventDefault();
 
-    const fromAirport = document.getElementById('fromAirport').value.toUpperCase();
-    const toAirport = document.getElementById('toAirport').value.toUpperCase();
+    // Get airport codes from autocomplete data attribute OR raw input
+    const fromInput = document.getElementById('fromAirport');
+    const toInput = document.getElementById('toAirport');
+
+    const fromAirport = (fromInput.dataset.airportCode || fromInput.value).toUpperCase().trim();
+    const toAirport = (toInput.dataset.airportCode || toInput.value).toUpperCase().trim();
+
     const departDate = document.getElementById('departDate').value;
     const returnDate = document.getElementById('returnDate').value;
     const tripType = document.querySelector('input[name="tripType"]:checked').value;
@@ -120,11 +138,11 @@ async function handleFlightSearch(e) {
 
     // Validation
     if (!isValidAirportCode(fromAirport)) {
-        showStatus('Invalid departure airport code. Use 3 letters (e.g., NYC)', 'error');
+        showStatus('Please select a valid departure airport', 'error');
         return;
     }
     if (!isValidAirportCode(toAirport)) {
-        showStatus('Invalid destination airport code. Use 3 letters (e.g., LAX)', 'error');
+        showStatus('Please select a valid destination airport', 'error');
         return;
     }
     if (fromAirport === toAirport) {
