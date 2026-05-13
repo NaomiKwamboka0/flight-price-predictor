@@ -10,14 +10,28 @@ class AirportAutocomplete {
 
         if (this.input) {
             this.input.addEventListener('input', (e) => this.handleInput(e));
-            this.input.addEventListener('blur', () => this.hideSuggestions());
+            // Delay blur-hide so a suggestion click has time to land first.
+            this.input.addEventListener('blur', () => {
+                setTimeout(() => this.hideSuggestions(), 200);
+            });
             this.input.addEventListener('focus', (e) => {
                 if (e.target.value.length > 0) {
                     this.showSuggestions();
                 }
             });
-            document.addEventListener('click', (e) => {
-                if (e.target !== this.input) {
+            // Keep input focused while pressing on the dropdown (prevents blur firing).
+            if (this.suggestionsContainer) {
+                this.suggestionsContainer.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                });
+            }
+            // Hide when clicking truly outside (not on input, not on dropdown).
+            document.addEventListener('mousedown', (e) => {
+                if (
+                    e.target !== this.input &&
+                    this.suggestionsContainer &&
+                    !this.suggestionsContainer.contains(e.target)
+                ) {
                     this.hideSuggestions();
                 }
             });
@@ -85,9 +99,13 @@ class AirportAutocomplete {
 
         this.suggestionsContainer.innerHTML = html;
 
-        // Add click handlers
+        // Use mousedown (fires before input blur) instead of click.
+        // preventDefault keeps input focused; stopPropagation stops the
+        // document-level outside-click handler from firing.
         this.suggestionsContainer.querySelectorAll('.suggestion-item').forEach(item => {
-            item.addEventListener('click', (e) => {
+            item.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 const code = item.dataset.code;
                 const airport = airportFinder.getByCode(code);
                 this.selectAirport(airport);

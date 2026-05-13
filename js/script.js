@@ -237,32 +237,86 @@ async function searchFlights(params) {
     }
 }
 
-// Mock flight generator - for testing UI
-function generateMockFlights(params) {
-    const { from, to, departDate, tripType } = params;
-    const airlines = [
-        { name: 'Qatar Airways', code: 'QR', logo: '✈️' },
-        { name: 'Ethiopian Airlines', code: 'ET', logo: '✈️' },
-        { name: 'Safarilink', code: 'SF', logo: '✈️' },
-        { name: 'Emirates', code: 'EK', logo: '✈️' },
-        { name: 'Turkish Airlines', code: 'TK', logo: '✈️' },
-        { name: 'Kenya Airways', code: 'KQ', logo: '✈️' },
-        { name: 'South African Airways', code: 'SA', logo: '✈️' }
-    ];
+// ==================== MOCK / DEMO FLIGHT GENERATOR ====================
+// Used when no real API keys are configured. Flights are clearly tagged
+// `isMock: true` so the UI can warn users that prices/times are illustrative.
 
+const MOCK_AIRLINES = [
+    { name: 'Qatar Airways', code: 'QR', global: true },
+    { name: 'Emirates', code: 'EK', global: true },
+    { name: 'Turkish Airlines', code: 'TK', global: true },
+    { name: 'Ethiopian Airlines', code: 'ET', regions: ['Africa', 'Middle East', 'Asia', 'Europe', 'North America'] },
+    { name: 'Kenya Airways', code: 'KQ', regions: ['Africa', 'Middle East', 'Asia', 'Europe'] },
+    { name: 'EgyptAir', code: 'MS', regions: ['Africa', 'Middle East', 'Europe', 'Asia', 'North America'] },
+    { name: 'Saudia', code: 'SV', regions: ['Middle East', 'Africa', 'Europe', 'Asia', 'North America'] },
+    { name: 'South African Airways', code: 'SA', regions: ['Africa', 'Europe', 'Middle East', 'Asia'] },
+    // Domestic-only — must be a route entirely within Kenya
+    { name: 'Safarilink', code: 'F2', domesticOnly: 'Kenya' },
+    { name: 'Jambojet', code: 'JM', domesticOnly: 'Kenya' },
+    // Global western carriers
+    { name: 'Delta Air Lines', code: 'DL', regions: ['North America', 'Europe', 'Asia', 'South America', 'Africa', 'Caribbean'] },
+    { name: 'United Airlines', code: 'UA', regions: ['North America', 'Europe', 'Asia', 'Oceania', 'South America', 'Caribbean', 'Central America'] },
+    { name: 'American Airlines', code: 'AA', regions: ['North America', 'Europe', 'Asia', 'South America', 'Caribbean', 'Central America'] },
+    { name: 'British Airways', code: 'BA', regions: ['Europe', 'North America', 'Asia', 'Africa', 'Middle East', 'Oceania', 'Caribbean'] },
+    { name: 'Lufthansa', code: 'LH', regions: ['Europe', 'North America', 'Asia', 'Africa', 'Middle East', 'South America'] },
+    { name: 'Air France', code: 'AF', regions: ['Europe', 'Africa', 'North America', 'Asia', 'South America', 'Caribbean'] },
+    { name: 'KLM', code: 'KL', regions: ['Europe', 'North America', 'Asia', 'Africa', 'South America', 'Caribbean'] },
+    // Asia / Oceania
+    { name: 'Singapore Airlines', code: 'SQ', regions: ['Asia', 'Oceania', 'Europe', 'North America', 'Middle East'] },
+    { name: 'Cathay Pacific', code: 'CX', regions: ['Asia', 'Oceania', 'Europe', 'North America', 'Middle East'] },
+    { name: 'Japan Airlines', code: 'JL', regions: ['Asia', 'North America', 'Europe', 'Oceania'] },
+    { name: 'ANA', code: 'NH', regions: ['Asia', 'North America', 'Europe', 'Oceania'] },
+    { name: 'Air India', code: 'AI', regions: ['Asia', 'Europe', 'North America', 'Middle East', 'Oceania'] },
+    { name: 'IndiGo', code: '6E', regions: ['Asia', 'Middle East'] },
+    { name: 'Qantas', code: 'QF', regions: ['Oceania', 'Asia', 'North America', 'Europe', 'South America'] },
+];
+
+function airlineServesRoute(airline, fromAirport, toAirport) {
+    if (!fromAirport || !toAirport) return airline.global === true;
+    if (airline.domesticOnly) {
+        return fromAirport.country === airline.domesticOnly && toAirport.country === airline.domesticOnly;
+    }
+    if (airline.global) return true;
+    const regions = airline.regions || [];
+    return regions.includes(fromAirport.region) && regions.includes(toAirport.region);
+}
+
+function pickAirlinesForRoute(fromAirport, toAirport, count = 7) {
+    const candidates = MOCK_AIRLINES.filter(a => airlineServesRoute(a, fromAirport, toAirport));
+    if (candidates.length === 0) {
+        return MOCK_AIRLINES.filter(a => a.global);
+    }
+    const shuffled = [...candidates].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, Math.min(count, shuffled.length));
+}
+
+// Build a real, useful booking link. For mock data we point users to Kayak
+// pre-filtered to the exact route + date + airline, so they can see real
+// available flights (rather than a generic search page).
+function buildBookingUrl(fromCode, toCode, departDate, airlineCode) {
+    const carrier = airlineCode ? `?sort=price_a&fs=airlines=${airlineCode}` : '';
+    return `https://www.kayak.com/flights/${fromCode}-${toCode}/${departDate}${carrier}`;
+}
+
+function generateMockFlights(params) {
+    const { from, to, departDate } = params;
+    const fromAirport = (typeof airportFinder !== 'undefined') ? airportFinder.getByCode(from) : null;
+    const toAirport = (typeof airportFinder !== 'undefined') ? airportFinder.getByCode(to) : null;
+
+    const airlinesForRoute = pickAirlinesForRoute(fromAirport, toAirport, 7);
     const flights = [];
     const baseDate = new Date(departDate);
 
     for (let i = 0; i < 12; i++) {
-        const airline = airlines[Math.floor(Math.random() * airlines.length)];
+        const airline = airlinesForRoute[i % airlinesForRoute.length];
         const departTime = new Date(baseDate);
         departTime.setHours(Math.floor(Math.random() * 24), Math.floor(Math.random() * 60), 0);
-        
+
         const arriveTime = new Date(departTime);
         arriveTime.setHours(arriveTime.getHours() + Math.floor(Math.random() * 12) + 2);
 
         const price = Math.floor(Math.random() * 1500) + 300;
-        const stops = Math.floor(Math.random() * 3);
+        const stops = airline.domesticOnly ? 0 : Math.floor(Math.random() * 3);
 
         flights.push({
             id: `flight-${i}`,
@@ -270,6 +324,7 @@ function generateMockFlights(params) {
             airlineCode: airline.code,
             price: price,
             currency: 'USD',
+            isMock: true,
             departure: {
                 airport: from,
                 time: departTime.toISOString(),
@@ -282,18 +337,17 @@ function generateMockFlights(params) {
             },
             duration: calculateDuration(departTime, arriveTime),
             stops: stops,
-            bookingUrl: `https://www.google.com/flights?hl=en#search;f=${from};t=${to};d=${departDate}`,
+            bookingUrl: buildBookingUrl(from, to, departDate, airline.code),
             amenities: {
                 baggage: stops === 0 ? '2 checked bags' : '1 checked bag',
                 meal: Math.random() > 0.5,
                 wifi: Math.random() > 0.7,
                 seat: Math.random() > 0.5 ? 'Extra legroom' : 'Standard'
             },
-            rating: (Math.random() * 2 + 3).toFixed(1) // 3-5 rating
+            rating: (Math.random() * 2 + 3).toFixed(1)
         });
     }
 
-    // Sort by price (cheapest first)
     return flights.sort((a, b) => a.price - b.price);
 }
 
@@ -346,11 +400,27 @@ function displayFlights(flights) {
     }
 
     noResults.style.display = 'none';
-    resultsContainer.innerHTML = flights.map(flight => createFlightCard(flight)).join('');
 
-    // Add click handlers
+    // Show a clear banner when the displayed results are demo/mock data
+    // so users don't mistake illustrative prices for bookable flights.
+    const isMock = flights.some(f => f.isMock);
+    const banner = isMock ? `
+        <div class="demo-banner">
+            <div class="demo-banner-icon">⚠️</div>
+            <div class="demo-banner-body">
+                <strong>Demo data</strong> — these are illustrative prices. No live API
+                returned results, so we're showing sample flights filtered to airlines
+                that actually serve this route. Click <em>Book Now</em> to see real,
+                bookable flights on Kayak.
+            </div>
+        </div>` : '';
+
+    resultsContainer.innerHTML = banner + flights.map(flight => createFlightCard(flight)).join('');
+
+    // Click on the card body opens details, but let "Book Now" pass through to its href.
     document.querySelectorAll('.flight-card').forEach(card => {
-        card.addEventListener('click', function() {
+        card.addEventListener('click', function(e) {
+            if (e.target.closest('.book-btn')) return;
             showFlightDetails(this.dataset.flightId);
         });
     });
@@ -362,10 +432,24 @@ function createFlightCard(flight) {
     const price = formatCurrency(flight.price, flight.currency);
     const stopsText = flight.stops === 0 ? 'Nonstop' : `${flight.stops} stop${flight.stops > 1 ? 's' : ''}`;
 
+    // Resolve a real booking URL. If the API gave us a working agent link,
+    // honor it. Otherwise build a Kayak deeplink filtered to this airline
+    // so the user lands on real, bookable flights.
+    const departDateOnly = (flight.departure.time || '').slice(0, 10);
+    const apiUrl = (flight.bookingUrl || '').trim();
+    const hasUsableApiUrl = apiUrl && apiUrl !== '#' && /^https?:\/\//i.test(apiUrl);
+    const bookingUrl = hasUsableApiUrl
+        ? apiUrl
+        : buildBookingUrl(flight.departure.airport, flight.arrival.airport, departDateOnly, flight.airlineCode);
+
+    const bookLabel = flight.isMock ? 'View Real Flights →' : 'Book Now →';
+    const sourceTag = flight.source ? `<span class="flight-source">via ${flight.source}</span>` : '';
+    const demoTag = flight.isMock ? '<span class="flight-demo-tag">DEMO</span>' : '';
+
     return `
-        <div class="flight-card" data-flight-id="${flight.id}">
+        <div class="flight-card${flight.isMock ? ' is-mock' : ''}" data-flight-id="${flight.id}">
             <div class="flight-card-header">
-                <div class="airline-name">${flight.airline}</div>
+                <div class="airline-name">${flight.airline} ${demoTag}</div>
                 <div class="flight-price">${price}</div>
             </div>
             <div class="flight-card-body">
@@ -386,12 +470,13 @@ function createFlightCard(flight) {
                 </div>
                 <div class="flight-footer">
                     <div class="flight-info">
-                        ${flight.amenities.meal ? '🍽️ Meal included' : ''} 
+                        ${flight.amenities.meal ? '🍽️ Meal included' : ''}
                         ${flight.amenities.wifi ? '📶 WiFi' : ''}
                         ${flight.amenities.seat ? `🪑 ${flight.amenities.seat}` : ''}
+                        ${sourceTag}
                     </div>
-                    <a href="${flight.bookingUrl}" target="_blank" class="book-btn">
-                        Book Now →
+                    <a href="${bookingUrl}" target="_blank" rel="noopener" class="book-btn">
+                        ${bookLabel}
                     </a>
                 </div>
             </div>

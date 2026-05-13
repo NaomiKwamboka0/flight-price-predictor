@@ -1201,6 +1201,63 @@ footer {
     }
 }
 
+/* ==================== DEMO DATA BANNER ==================== */
+
+.demo-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    background: linear-gradient(135deg, #fff8e6 0%, #fff1d6 100%);
+    border: 2px solid #ffcc66;
+    border-left: 6px solid #ff9933;
+    color: #6b4a10;
+    padding: 16px 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 14px rgba(255, 153, 51, 0.2);
+    animation: fadeInUp 0.5s ease-out;
+}
+
+.demo-banner-icon {
+    font-size: 28px;
+    flex-shrink: 0;
+}
+
+.demo-banner-body {
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.demo-banner-body strong {
+    color: #b35900;
+}
+
+.flight-demo-tag {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.25);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+    margin-left: 8px;
+    letter-spacing: 0.5px;
+    vertical-align: middle;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.flight-source {
+    display: inline-block;
+    margin-left: 10px;
+    font-size: 11px;
+    color: #b08a99;
+    font-style: italic;
+}
+
+.flight-card.is-mock {
+    opacity: 0.92;
+}
+
 /* ==================== PRICE PREDICTION ==================== */
 
 .prediction-info {
