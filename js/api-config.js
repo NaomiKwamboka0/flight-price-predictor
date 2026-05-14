@@ -2,32 +2,19 @@
 // This file stores API keys and configuration
 // For production, consider using environment variables with a build process
 
+// SECURITY: Server-side API keys (Skyscanner, Amadeus, Kiwi, etc.) are NOT in
+// this file anymore. They live in Vercel environment variables and are only
+// read by /api/flights.js on the server. Anything left here is shipped to the
+// browser and is therefore PUBLIC — only put public/restricted-by-domain keys
+// (e.g. Firebase web SDK keys, which are safe by design) below.
 const API_KEYS = {
-    // Skyscanner API (RapidAPI)
-    VITE_SKYSCANNER_API_KEY: 'ec104fd914msh5d83f016ffdfcd3p1a5103jsn8da41c54678d',
-    VITE_SKYSCANNER_API_HOST: 'skyscanner44.p.rapidapi.com',
-    
-    // Amadeus API (get key at https://developers.amadeus.com/)
-    VITE_AMADEUS_API_KEY: '',
-    VITE_AMADEUS_API_SECRET: '',
-    
-    // Kiwi.com API (get key at https://tequila.kiwi.com/)
-    VITE_KIWI_API_KEY: '',
-    
-    // Kayak API (via RapidAPI)
-    VITE_KAYAK_API_KEY: '',
-    
-    // SerpAPI (Google Flights - get key at https://serpapi.com/)
-    VITE_SERPAPI_KEY: '',
-    
-    // Weather API
-    VITE_OPENWEATHER_API_KEY: '',
-    
-    // AI APIs
-    VITE_HUGGING_FACE_API_KEY: '',
-    VITE_OPENAI_API_KEY: '',
-    
-    // Firebase Configuration
+    // The frontend now hits /api/flights (our serverless proxy) instead of
+    // RapidAPI directly. We just need a flag so flightAPI.js knows the
+    // proxy is available.
+    USE_PROXY: true,
+
+    // Firebase web SDK keys are safe to expose — they identify the project,
+    // and access is restricted by Firebase Security Rules + Auth domain allowlist.
     FIREBASE_API_KEY: 'AIzaSyCFd7mrGybVT84NDI6OKcWMoS9EErgQkgs',
     FIREBASE_AUTH_DOMAIN: 'flight-prediction-9ab7b.firebaseapp.com',
     FIREBASE_PROJECT_ID: 'flight-prediction-9ab7b',
@@ -46,6 +33,4 @@ if (typeof apiConfig !== 'undefined' && apiConfig instanceof Map) {
     });
 }
 
-console.log('[API Config] Loaded API configuration');
-console.log('[API Config] Skyscanner API:', API_KEYS.VITE_SKYSCANNER_API_HOST ? 'Configured' : 'Missing');
-console.log('[API Config] Amadeus API:', API_KEYS.VITE_AMADEUS_API_KEY ? 'Configured' : 'Missing');
+console.log('[API Config] Loaded — flight search routes through /api/flights (server-side).');

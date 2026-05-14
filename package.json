@@ -1,0 +1,14 @@
+{
+  "name": "flight-price-predictor",
+  "version": "1.0.0",
+  "description": "Find the cheapest flights worldwide. Static frontend + Vercel serverless backend.",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "vercel dev",
+    "start": "vercel dev"
+  }
+}

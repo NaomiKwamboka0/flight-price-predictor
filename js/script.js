@@ -194,47 +194,63 @@ async function handleFlightSearch(e) {
 
     } catch (error) {
         console.error('Search error:', error);
-        showStatus(`Error: ${error.message}`, 'error');
+        if (error.apiError) {
+            showStatus(
+                `Live flight search failed. ${error.message} ` +
+                `Configure SKYSCANNER_API_KEY in Vercel and redeploy, or check the API quota.`,
+                'error'
+            );
+        } else {
+            showStatus(`Error: ${error.message}`, 'error');
+        }
     }
 }
 
 // ==================== FLIGHT SEARCH API CALL ====================
 
 async function searchFlights(params) {
-    console.log('[Search] Starting flight search...');
-    console.log('[Search] Params:', params);
-    
+    console.log('[Search] Starting flight search...', params);
+
     try {
-        // Check if we have API keys configured from window.API_KEYS
-        const hasSkyscannerKey = !!(window.API_KEYS && window.API_KEYS.VITE_SKYSCANNER_API_KEY);
-        const hasAmadeusKey = !!(window.API_KEYS && window.API_KEYS.VITE_AMADEUS_API_KEY);
-        const hasKiwiKey = !!(window.API_KEYS && window.API_KEYS.VITE_KIWI_API_KEY);
-        
-        console.log('[Search] Has Skyscanner key:', hasSkyscannerKey);
-        console.log('[Search] Has Amadeus key:', hasAmadeusKey);
-        console.log('[Search] Has Kiwi key:', hasKiwiKey);
-
-        // If no real API keys configured, use mock data
-        if (!hasSkyscannerKey && !hasAmadeusKey && !hasKiwiKey) {
-            console.warn('[Search] No API keys configured, using mock data');
-            return generateMockFlights(params);
+        if (window.flightAPIHandler) {
+            const flights = await window.flightAPIHandler.searchFlights(params);
+            if (flights.length > 0) return flights;
+            // API responded but found nothing — let the caller show the no-results state.
+            return [];
         }
-
-        // Use the flight API handler to search
-        if (typeof window.flightAPIHandler !== 'undefined') {
-            console.log('[Search] Using FlightAPIHandler...');
-            return await window.flightAPIHandler.searchFlights(params);
-        }
-
-        // Fallback if handler not available
-        console.log('[Search] FlightAPIHandler not available, using mock data');
-        return generateMockFlights(params);
-
+        throw new Error('Flight API client not loaded');
     } catch (error) {
-        console.error('[Search] Fatal error:', error);
-        // Return mock data on any error
-        return generateMockFlights(params);
+        const reason = describeApiError(error);
+        console.warn('[Search] Real API failed:', reason);
+
+        // Only fall back to mock if we're clearly running without the backend
+        // (i.e. /api/flights itself returned a network error). Real upstream
+        // errors propagate so the user sees a real error message.
+        const networkOnly =
+            error?.info?.networkError ||
+            /Failed to fetch|NetworkError|not reach/i.test(error?.message || '');
+
+        if (networkOnly) {
+            const flights = generateMockFlights(params);
+            flights.forEach(f => (f.mockReason = reason));
+            return flights;
+        }
+
+        const wrapped = new Error(reason);
+        wrapped.apiError = true;
+        wrapped.original = error;
+        throw wrapped;
     }
+}
+
+function describeApiError(error) {
+    if (!error) return 'Unknown error';
+    const info = error.info || {};
+    const parts = [error.message];
+    if (info.status) parts.push(`(HTTP ${info.status})`);
+    if (info.hint) parts.push(`— ${info.hint}`);
+    if (info.detail && typeof info.detail === 'string') parts.push(`Detail: ${info.detail.slice(0, 200)}`);
+    return parts.filter(Boolean).join(' ');
 }
 
 // ==================== MOCK / DEMO FLIGHT GENERATOR ====================
@@ -290,12 +306,27 @@ function pickAirlinesForRoute(fromAirport, toAirport, count = 7) {
     return shuffled.slice(0, Math.min(count, shuffled.length));
 }
 
-// Build a real, useful booking link. For mock data we point users to Kayak
-// pre-filtered to the exact route + date + airline, so they can see real
-// available flights (rather than a generic search page).
-function buildBookingUrl(fromCode, toCode, departDate, airlineCode) {
-    const carrier = airlineCode ? `?sort=price_a&fs=airlines=${airlineCode}` : '';
-    return `https://www.kayak.com/flights/${fromCode}-${toCode}/${departDate}${carrier}`;
+// Build a real, useful booking link. Skyscanner's URL pattern is reliable
+// and shows real, sorted-by-price flights for the exact route + date. Their
+// airline filter via URL is fragile, so we omit it — users land on real
+// availability and can filter in-page.
+function buildBookingUrl(fromCode, toCode, departDate, _airlineCode) {
+    const yymmdd = toYymmdd(departDate);
+    const from = (fromCode || '').toLowerCase();
+    const to = (toCode || '').toLowerCase();
+    if (!from || !to) return 'https://www.skyscanner.com/';
+    if (!yymmdd) return `https://www.skyscanner.com/transport/flights/${from}/${to}/`;
+    return `https://www.skyscanner.com/transport/flights/${from}/${to}/${yymmdd}/?adults=1&cabinclass=economy`;
+}
+
+function toYymmdd(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    if (Number.isNaN(d.getTime())) return '';
+    const yy = String(d.getUTCFullYear()).slice(2);
+    const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(d.getUTCDate()).padStart(2, '0');
+    return `${yy}${mm}${dd}`;
 }
 
 function generateMockFlights(params) {
