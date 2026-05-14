@@ -10,3 +10,4 @@ config.local.js
 dist/
 build/
 .vscode/settings.json
+.vercel/

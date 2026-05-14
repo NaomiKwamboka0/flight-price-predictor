@@ -13,42 +13,63 @@ Welcome! This guide will walk you through setting up the **complete** Flight Pri
 
 ---
 
-## ⚡ Quick Start (5 minutes)
+## ⚡ Quick Start — Deploy from GitHub via Vercel (real flight data)
 
-### 1. Clone & Setup
+> ⚠️ **GitHub Pages alone won't give you real flight data.** GitHub Pages is
+> static-only and can't run the `/api/flights` serverless function that holds
+> your Skyscanner key. Use Vercel — it deploys from your GitHub repo
+> automatically and runs the backend for free.
+
+### 1. Push the project to GitHub
 ```bash
-git clone https://github.com/YOUR_USERNAME/flight-price-predictor.git
-cd flight-price-predictor
-```
-
-### 2. Copy Environment Template
-```bash
-cp .env.example .env
-```
-
-### 3. Edit `.env` File
-Open `.env` and add your API keys (see section below)
-
-### 4. Run Locally
-```bash
-# Python
-python -m http.server 8000
-
-# Or Node.js
-npx http-server
-
-# Visit: http://localhost:8000
-```
-
-### 5. Deploy to GitHub Pages
-```bash
+git init                           # if not already a repo
 git add .
-git commit -m "Initial Flight Price Predictor - Complete"
-git push origin main
-
-# Go to: Settings → Pages → Source: main → Save
-# Your site: https://YOUR_USERNAME.github.io/flight-price-predictor/
+git commit -m "Flight Price Predictor"
+git branch -M main
+git remote add origin https://github.com/YOUR_USERNAME/flight-price-predictor.git
+git push -u origin main
 ```
+
+### 2. Connect the repo to Vercel
+1. Go to **https://vercel.com/new**
+2. Sign in with GitHub
+3. Pick your `flight-price-predictor` repo → click **Import**
+4. Framework preset: **Other** (Vercel auto-detects `/api/*.js` as serverless functions)
+5. Click **Deploy**
+
+### 3. Add your API key to Vercel
+1. In the Vercel project → **Settings → Environment Variables**
+2. Add:
+   - **Key:** `SKYSCANNER_API_KEY`
+   - **Value:** your RapidAPI key
+   - Environments: Production, Preview, Development
+3. (Optional) Add `SKYSCANNER_API_HOST` if you're not using `skyscanner44.p.rapidapi.com`
+4. Hit **Save**, then go to **Deployments → Redeploy** so the new variable takes effect
+
+### 4. Verify the API actually works
+Open `https://YOUR-PROJECT.vercel.app/api/flights?from=NBO&to=MBA&date=2026-06-01`
+
+You should see real JSON with `flights[]`. If you see an error:
+- **"Server is not configured"** → env var didn't save. Re-add and redeploy.
+- **"Upstream API responded 401/403"** → wrong RapidAPI key.
+- **"Upstream API responded 429"** → free quota exhausted (RapidAPI free = 100/month).
+
+### 5. Local development (optional)
+```bash
+npm install -g vercel        # one-time
+vercel link                  # link to your Vercel project
+vercel env pull .env.local   # pull the API key locally
+vercel dev                   # runs frontend + /api on http://localhost:3000
+```
+
+You can keep editing files and pushing to GitHub — Vercel auto-deploys every push.
+
+---
+
+### Old GitHub-Pages-only path (demo data only, kept for reference)
+If you just want to demo the UI without real flight data, you can still push
+to GitHub Pages — but the site will only ever show the amber "Demo data"
+banner because there's no backend to hold the API key.
 
 ---
 
