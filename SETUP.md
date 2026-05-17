@@ -43,7 +43,7 @@ git push -u origin main
    - **Key:** `SKYSCANNER_API_KEY`
    - **Value:** your RapidAPI key
    - Environments: Production, Preview, Development
-3. (Optional) Add `SKYSCANNER_API_HOST` if you're not using `skyscanner44.p.rapidapi.com`
+3. (Optional) Add `SKYSCANNER_API_HOST` if you're not using `skyscanner-flights-travel-api.p.rapidapi.com` (the default)
 4. Hit **Save**, then go to **Deployments → Redeploy** so the new variable takes effect
 
 ### 4. Verify the API actually works
@@ -186,7 +186,7 @@ Copy and fill this in:
 
 # Skyscanner (recommended)
 VITE_SKYSCANNER_API_KEY=paste_your_key_here
-VITE_SKYSCANNER_API_HOST=skyscanner44.p.rapidapi.com
+VITE_SKYSCANNER_API_HOST=skyscanner-flights-travel-api.p.rapidapi.com
 
 # Amadeus
 VITE_AMADEUS_API_KEY=paste_your_key_here
